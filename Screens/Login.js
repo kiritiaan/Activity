@@ -1,101 +1,138 @@
-import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import RegisterPage from './Register';
 import { Auth, signIn } from '../Firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import RegisterPage from './Register';
+import LoadingScreen from './LoadingScreen';
 
-export default function Login({navigation}) {
+import { StatusBar } from 'expo-status-bar';
 
+export default function Login({ navigation }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = () => {
+    setLoading(true);
     signInWithEmailAndPassword(Auth, username, password)
       .then((userCredential) => {
-        console.log('Login successful');
+        setLoading(false);
       })
       .catch((error) => {
-        console.log('Login failed', error);
+        setLoading(false);
+        let errorMessage = '';
+        switch (error.code) {
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email address format!';
+            break;
+          case 'auth/user-not-found':
+            errorMessage = 'Invalid email or password, please try again.';
+            break;
+            case 'auth/wrong-password':
+              errorMessage = 'Invalid email or password, please try again.';
+              break;
+              case 'auth/missing-password':
+                errorMessage = 'Password should not be empty!';
+                break;
+          default:
+            errorMessage = error.message;
+            break;
+        }
+        alert(errorMessage);
       });
   };
 
   useEffect(() => {
     const unsubscribe = Auth.onAuthStateChanged((user) => {
       if (user) {
-        // User is authenticated
-        console.log('User authenticated');
         navigation.replace('Home');
       }
     });
-    // Unsubscribe from the listener when component unmounts
-    return unsubscribe;
+
+    return unsubscribe; // Unsubscribe from the listener when component unmounts
   }, []);
 
   const handleRegister = () => {
-    navigation.navigate("Register");
+    navigation.navigate('Register');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+    {loading && <LoadingScreen />}
+      <Text style={styles.title}>Welcome Back!</Text>
+      <Text style={styles.subtitle}>Log in with your email and password</Text>
       <TextInput
         style={styles.input}
         onChangeText={setUsername}
         value={username}
         placeholder="Email"
       />
-      
+
       <TextInput
         style={styles.input}
         onChangeText={setPassword}
         value={password}
         placeholder="Password"
-        secureTextEntry={true}
+        secureTextEntry
       />
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
+
+      <TouchableOpacity style={[styles.button, styles.loginButton]} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Log In</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Register</Text>
+
+      <TouchableOpacity style={[styles.button, styles.registerButton]} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Create an Account</Text>
       </TouchableOpacity>
+
+      <StatusBar style="auto" />
     </View>
   );
 }
 
-
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 36,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 50,
+    marginTop: 50,
+  },
+  subtitle: {
+    fontSize: 18,
+    marginBottom: 30,
   },
   input: {
     borderWidth: 1,
-    borderColor: 'gray',
+    borderColor: '#D3D3D3',
     borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
     width: '80%',
-    fontSize: 18,
+    marginBottom: 20,
+    zIndex: -1,
   },
   button: {
-    backgroundColor: 'blue',
     borderRadius: 5,
-    padding: 10,
-    marginTop: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    marginBottom: 20,
     width: '80%',
+    zIndex: -1,
+  },
+  loginButton: {
+    backgroundColor: '#F9A620',
+  },
+  registerButton: {
+    backgroundColor: '#B0B0B0',
   },
   buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
     textAlign: 'center',
+    fontWeight: 'bold',
     fontSize: 18,
   },
 });

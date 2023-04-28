@@ -6,6 +6,7 @@ import Login from './Screens/Login';
 import RegisterPage from './Screens/Register';
 import ToDo from './Screens/ItemList';
 import Item from './Screens/Item';
+import AddData from './Screens/AddItem';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,9 +15,10 @@ function App() {
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen name="Login" component={Login} options={{ headerShown: false}}/>
-        <Stack.Screen name="Register" component={RegisterPage} />
+        <Stack.Screen name="Register" component={RegisterPage} options={{ headerShown: false}}/>
         <Stack.Screen name="Home" component={ToDo} options={{ headerShown: false}}/>
         <Stack.Screen name="Item" component={Item} options={{ headerShown: false}}/>
+        <Stack.Screen name="Add" component={AddData} options={{ headerShown: false}}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

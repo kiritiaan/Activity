@@ -1,23 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
 import { Button, FAB } from 'react-native-elements';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Auth } from '../Firebase';
 import { signOut } from 'firebase/auth';
 import { db } from '../Firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
+import LoadingScreen from './LoadingScreen';
 
-export default function RegisterPage({ navigation }) {
-
+export default function ToDo({ navigation }) {
   const [dataList, setDataList] = useState([]);
-  getData = () => {
-    const docs = collection(db, "Data");
+  const [isLoading, setIsLoading] = useState(true);
+
+  function getData() {
+    const docs = collection(db, 'Data');
     onSnapshot(docs,(ducs) => {
       const oten = [];
       ducs.forEach(element => {
-        oten.push({ID:element.id, ...element.data(),});
+        oten.push({ ID:element.id, ...element.data() });
       });
       setDataList(oten);
+      setIsLoading(false); // Set loading to false after the data is fetched
     })
   }
 
@@ -25,89 +28,134 @@ export default function RegisterPage({ navigation }) {
     getData();
   }, []);
 
-  console.log(navigation);
-
   const Block = ({data, nav}) =>{
     let id = data.ID;
     return (
-      <TouchableOpacity onPress={() => nav.navigate("Item", id)}>
-      <View style={styles.block}>
+      <TouchableOpacity
+        onPress={() => nav.navigate('Item', id)}
+        activeOpacity={0.6}
+        style={styles.block}
+      >
         <Text style={styles.blockTitle}>{data.Title}</Text>
         <Text style={styles.blockDescription}>{data.Description}</Text>
-      </View>
       </TouchableOpacity>
     );
-  } 
+  }
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {text: 'Cancel', onPress: () => {}, style: 'cancel'},
+        {
+          text: 'Logout',
+          onPress: () => {
+            signOut(Auth).then(() => {
+              navigation.replace('Login');
+            }).catch((error) => {
+              let errorMessage = error.message;
+              alert(errorMessage); // Show the error message on an alert box
+            })
+          },
+          style: 'destructive',
+        },
+      ],
+      {cancelable: true},
+    );
+  }
+
+  if (isLoading) {
+    return <LoadingScreen /> // Show the loading screen while fetching data
+  }
+
   return (
-    <SafeAreaView style={{flex:1}}>
-    <Text style={styles.title}>Item List</Text>
-    
-    <FAB title="Oten" 
-      onPress={() => signOut(Auth).then(() => {
-        navigation.goBack();
-      }).catch((error) => {
-        console.log(error);
-      }) }/>
-    <ScrollView>
-
-      {dataList.map((datas, index) => {
-        return (<Block key={index} data={datas} nav = {navigation}/>);
-      })}
+    <SafeAreaView style={{flex:1, backgroundColor: '#ffffff'}}>
       
+      <View style={styles.headerContainer}>
+        <Text style={styles.title}>Item List</Text>
+        <FAB
+          title="Logout"
+          color="#ffffff"
+          onPress={handleLogout}
+          buttonStyle={styles.fab}
+        />
+      </View>
 
-    </ScrollView>
+      <ScrollView style={styles.contentContainer}>
+        {dataList.map((data, index) => {
+          return (<Block key={index} data={data} nav={navigation}/>);
+        })}
+      </ScrollView>
+
+      <View style={styles.addButtonContainer}>
+        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('Add')}>
+          <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
+      </View>
 
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
-  block: {
-    backgroundColor: '#00aabb',
-    padding: 20,
-    alignSelf: 'center',
-    borderRadius: 10,
-    width: '90%',
-    margin: 8,
-  },
-  blockTitle: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  blockDescription: {
-    color: 'white',
-    fontSize: 15,
-  },
-  container: {
-    flex: 1,
-    paddingTop: '15%',
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    height: 80,
+    paddingHorizontal: 20,
+    backgroundColor: '#00aabb',
   },
   title: {
     fontSize: 36,
     fontWeight: 'bold',
     textAlign: 'center',
+    color: '#ffffff',
+    flex: 1,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: 'gray',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
-    width: '80%',
-    fontSize: 18,
+  fab: {
+    backgroundColor: '#ff7f50',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 50,
   },
-  button: {
-    backgroundColor: 'blue',
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 10,
-    width: '80%',
+  contentContainer: {
+    flexGrow: 1,
   },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontSize: 18,
+  block: {
+    backgroundColor: '#00aabb',
+    padding: 20,
+    borderRadius: 10,
+    margin: 10,
+    elevation: 5,
+  },
+  blockTitle: {
+  color: '#ffffff',
+  fontSize: 24,
+  fontWeight: 'bold',
+  marginBottom: 10,
+  },
+  blockDescription: {
+  color: '#ffffff',
+  fontSize: 16,
+  },
+  addButtonContainer: {
+  position: 'absolute',
+  bottom: 20,
+  right: 20,
+  },
+  addButton: {
+  backgroundColor: '#ff7f50',
+  borderRadius: 50,
+  width: 60,
+  height: 60,
+  alignItems: 'center',
+  justifyContent: 'center',
+  elevation: 5,
+  },
+  addButtonText: {
+  fontSize: 30,
+  color: '#ffffff',
   },
 });
