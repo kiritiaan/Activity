@@ -1,28 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, BackHandler } from 'react-native';
 import { Button, FAB } from 'react-native-elements';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Auth } from '../Firebase';
+import { Auth, db } from '../Firebase';
 import { signOut } from 'firebase/auth';
-import { db } from '../Firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import LoadingScreen from './LoadingScreen';
+
 
 export default function ToDo({ navigation }) {
   const [dataList, setDataList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOnFirst, setIsOnFirst] = useState(true);
 
-  function getData() {
-    const docs = collection(db, 'Data');
-    onSnapshot(docs,(ducs) => {
-      const oten = [];
-      ducs.forEach(element => {
-        oten.push({ ID:element.id, ...element.data() });
-      });
-      setDataList(oten);
-      setIsLoading(false); // Set loading to false after the data is fetched
-    })
-  }
+function getData() {
+  const docs = collection(db, 'Data');
+  const ref = query(docs, orderBy('createdAt', 'desc'));
+  onSnapshot(ref, (ducs) => {
+    const oten = [];
+    ducs.forEach((element) => {
+      oten.push({ ID: element.id, ...element.data() });
+    });
+    setDataList(oten);
+    setIsLoading(false);
+  })
+}
 
   useEffect(() => {
     getData();
@@ -32,7 +34,7 @@ export default function ToDo({ navigation }) {
     let id = data.ID;
     return (
       <TouchableOpacity
-        onPress={() => nav.navigate('Item', id)}
+        onPress={() => {nav.navigate('Item', id); setIsOnFirst(false);}}
         activeOpacity={0.6}
         style={styles.block}
       >
