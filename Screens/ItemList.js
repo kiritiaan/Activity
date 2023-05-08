@@ -4,7 +4,7 @@ import { Button, FAB } from 'react-native-elements';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Auth, db } from '../Firebase';
 import { signOut } from 'firebase/auth';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import LoadingScreen from './LoadingScreen';
 
 
@@ -12,23 +12,27 @@ export default function ToDo({ navigation }) {
   const [dataList, setDataList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnFirst, setIsOnFirst] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-function getData() {
-  const docs = collection(db, 'Data');
-  const ref = query(docs, orderBy('createdAt', 'desc'));
-  onSnapshot(ref, (ducs) => {
-    const oten = [];
-    ducs.forEach((element) => {
-      oten.push({ ID: element.id, ...element.data() });
-    });
-    setDataList(oten);
-    setIsLoading(false);
-  })
-}
+  function getData() {
+    const docs = collection(db, 'Data');
+    const ref = query(docs, orderBy('createdAt', 'desc'));
+    onSnapshot(ref, (ducs) => {
+      const oten = [];
+      ducs.forEach((element) => {
+        oten.push({ ID: element.id, ...element.data() });
+      });
+      setDataList(oten);
+      setIsLoading(false);
+    })
+  }
 
   useEffect(() => {
     getData();
   }, []);
+  useEffect(() => {
+    handleSearch();
+  }, [searchQuery]);
 
   const Block = ({data, nav}) =>{
     let id = data.ID;
@@ -67,6 +71,25 @@ function getData() {
     );
   }
 
+  const handleSearch = () => {
+    if (searchQuery !== '') {
+      const docs = collection(db, 'Data');
+      const ref = query(
+        docs, where('TitleLowerCase', '>=', searchQuery.trim().toLowerCase()), where('TitleLowerCase', '<=', searchQuery.trim().toLowerCase() + '\uf8ff')
+      );
+      onSnapshot(ref, (ducs) => { 
+        const oten = [];
+        ducs.forEach((element) => {
+          oten.push({ ID: element.id, ...element.data() });
+        });
+        setDataList(oten);
+      })
+    } else {
+      getData();
+    }
+  }
+  
+
   if (isLoading) {
     return <LoadingScreen /> // Show the loading screen while fetching data
   }
@@ -81,6 +104,17 @@ function getData() {
           color="#ffffff"
           onPress={handleLogout}
           buttonStyle={styles.fab}
+        />
+      </View>
+
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Filter by title..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onSubmitEditing={handleSearch}
+          clearButtonMode="while-editing"
         />
       </View>
 
@@ -133,31 +167,54 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   blockTitle: {
-  color: '#ffffff',
-  fontSize: 24,
-  fontWeight: 'bold',
-  marginBottom: 10,
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   blockDescription: {
-  color: '#ffffff',
-  fontSize: 16,
+    color: '#ffffff',
+    fontSize: 16,
   },
   addButtonContainer: {
-  position: 'absolute',
-  bottom: 20,
-  right: 20,
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
   },
   addButton: {
-  backgroundColor: '#ff7f50',
-  borderRadius: 50,
-  width: 60,
-  height: 60,
-  alignItems: 'center',
-  justifyContent: 'center',
-  elevation: 5,
+    backgroundColor: '#ff7f50',
+    borderRadius: 50,
+    width: 60,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
   },
   addButtonText: {
-  fontSize: 30,
-  color: '#ffffff',
+    fontSize: 30,
+    color: '#ffffff',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  searchInput: {
+    backgroundColor: '#e1e1e1',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginRight: 10,
+    flex: 1,
+  },
+  searchButton: {
+    backgroundColor: '#ff7f50',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  searchButtonText: {
+    color: '#ffffff',
   },
 });

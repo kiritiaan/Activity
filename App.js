@@ -7,6 +7,7 @@ import RegisterPage from './Screens/Register';
 import ToDo from './Screens/ItemList';
 import Item from './Screens/Item';
 import AddData from './Screens/AddItem';
+import Toast from 'react-native-toast-message';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +21,7 @@ function App() {
         <Stack.Screen name="Item" component={Item} options={{ headerShown: false}}/>
         <Stack.Screen name="Add" component={AddData} options={{ headerShown: false}}/>
       </Stack.Navigator>
+      <Toast />
     </NavigationContainer>
   );
 }
